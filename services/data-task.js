@@ -16,6 +16,10 @@ class Datatask {
     })
     return http.post('/tasks', formData)
   }
+
+  delete (id) {
+    return http.delete(`tasks/${id}`)
+  }
 }
 
 export default new Datatask()

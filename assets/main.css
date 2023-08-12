@@ -5,3 +5,11 @@ body, html, #app, .application--wrap {
 .general {
   background-color: #FFF !important;
 }
+
+.card-actions-icons {
+  position: absolute;
+  bottom: 0;
+  left: 100;
+  background: rgba(255, 255, 255, 0.7); /* Opcional: fondo semi transparente para mejorar la visibilidad */
+}
+

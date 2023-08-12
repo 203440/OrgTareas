@@ -32,9 +32,15 @@
         <v-row>
           <v-col class="blue lighten-2, column-spacing">
             <h1>To Do</h1>
-            <!-- <v-card>
-              <v-card-title>To Do</v-card-title>
-            </v-card> -->
+            <v-card v-for="task in tareastoDo" :key="task.id" class="white , task">
+              <v-card-title class="purple lighten-3">{{ task.title }}</v-card-title>
+              <v-card-text class="black-text2">{{ task.due_date }}</v-card-text>
+              <v-card-text class="black-text2">{{ task.is_completed }}</v-card-text>
+              <v-card-actions>
+                <v-btn @click="editTask(task)" class="card-actions-icons"><v-icon>mdi-pencil</v-icon></v-btn>
+                <v-btn @click="deleteTask(task.id)" ><v-icon color="red">mdi-delete</v-icon></v-btn>
+              </v-card-actions>
+            </v-card>
           </v-col>
           <v-col class="orange lighten-2, column-spacing">
             <h1>Doing</h1>
@@ -44,9 +50,15 @@
           </v-col>
           <v-col class="green lighten-2, column-spacing">
             <h1>Done</h1>
-            <!-- <v-card>
-              <v-card-title>Done</v-card-title>
-            </v-card>-->
+            <v-card v-for="task in tareasDone" :key="task.id" class="white , task">
+              <v-card-title class="purple lighten-3">{{ task.title }}</v-card-title>
+              <v-card-text class="black-text2">{{ task.due_date }}</v-card-text>
+              <v-card-text class="black-text2">{{ task.is_completed }}</v-card-text>
+              <v-card-actions>
+                <v-btn @click="editTask(task)" class="card-actions-icons"><v-icon>mdi-pencil</v-icon></v-btn>
+                <v-btn @click="deleteTask(task.id)"><v-icon color="red">mdi-delete</v-icon></v-btn>
+              </v-card-actions>
+            </v-card>
           </v-col>
         </v-row>
       </v-container>
@@ -81,6 +93,14 @@ export default {
       console.error('Error al recuperar las tareas', error)
     }
   },
+  computed: {
+    tareastoDo () {
+      return this.tasks.filter(task => task.is_completed === 1)
+    },
+    tareasDone () {
+      return this.tasks.filter(task => task.is_completed === 0)
+    }
+  },
   methods: {
     async submitForm () {
       const taskData = {
@@ -103,6 +123,28 @@ export default {
       } catch (error) {
         console.error('Hubo un detalle al agregar la tarea', error)
       }
+    },
+    async deleteTask (id) {
+      try {
+        const response = await datatask.delete(id)
+        if (response.status === 200) {
+          console.log('Se elimino con exito la tarea')
+          await this.refreshTasks()
+          this.$forceUpdate()
+        }
+      } catch (error) {
+        console.error('Hubo un detalle al eliminar la tarea', error)
+      }
+    },
+    async refreshTasks () {
+      try {
+        const response = await datatask.getAll()
+        if (response.status === 200) {
+          this.tasks = response.data
+        }
+      } catch (error) {
+        console.error('Error al recuperar las tareas', error)
+      }
     }
   },
   name: 'IndexPage'
@@ -111,5 +153,17 @@ export default {
 <style>
 .column-spacing {
   margin-right: 20px;
+}
+.card-actions-icons {
+  position: absolute;
+  bottom: 10px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.7);
+}
+.black-text2 {
+  color: black!important;
+}
+.task{
+  margin-bottom: 15px;
 }
 </style>
