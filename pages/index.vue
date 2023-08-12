@@ -35,27 +35,27 @@
             <v-card v-for="task in tareastoDo" :key="task.id" class="white , task">
               <v-card-title class="purple lighten-3">{{ task.title }}</v-card-title>
               <v-card-text class="black-text2">{{ task.due_date }}</v-card-text>
-              <v-card-text class="black-text2">{{ task.is_completed }}</v-card-text>
+              <v-card-text class="black-text2">No completada</v-card-text>
               <v-card-actions>
-                <v-btn @click="editTask(task)" class="card-actions-icons"><v-icon>mdi-pencil</v-icon></v-btn>
+                <v-btn @click="updateTask(task)" class="card-actions-icons"><v-icon>mdi-pencil</v-icon></v-btn>
                 <v-btn @click="deleteTask(task.id)" ><v-icon color="red">mdi-delete</v-icon></v-btn>
               </v-card-actions>
             </v-card>
           </v-col>
-          <v-col class="orange lighten-2, column-spacing">
+          <!-- <v-col class="orange lighten-2, column-spacing">
             <h1>Doing</h1>
-            <!-- <v-card>
+            <v-card>
               <v-card-title>Doing</v-card-title>
-            </v-card>-->
-          </v-col>
+            </v-card>
+          </v-col>-->
           <v-col class="green lighten-2, column-spacing">
             <h1>Done</h1>
             <v-card v-for="task in tareasDone" :key="task.id" class="white , task">
               <v-card-title class="purple lighten-3">{{ task.title }}</v-card-title>
               <v-card-text class="black-text2">{{ task.due_date }}</v-card-text>
-              <v-card-text class="black-text2">{{ task.is_completed }}</v-card-text>
+              <v-card-text class="black-text2">Completada</v-card-text>
               <v-card-actions>
-                <v-btn @click="editTask(task)" class="card-actions-icons"><v-icon>mdi-pencil</v-icon></v-btn>
+                <v-btn @click="updateTask(task)" class="card-actions-icons"><v-icon>mdi-pencil</v-icon></v-btn>
                 <v-btn @click="deleteTask(task.id)"><v-icon color="red">mdi-delete</v-icon></v-btn>
               </v-card-actions>
             </v-card>
@@ -80,7 +80,8 @@ export default {
       comments: '',
       description: '',
       tags: '',
-      tasks: []
+      tasks: [],
+      task: null
     }
   },
   async mounted () {
@@ -114,14 +115,22 @@ export default {
       }
       console.log(taskData)
       try {
-        const response = await datatask.create(taskData)
-        if (response.status === 201) {
-          console.log('Tarea Agregada con éxito', response.data)
+        let response
+
+        if (this.task && this.task.id) {
+          response = await datatask.update(this.task.id, taskData)
         } else {
-          console.error('Error al agregar la tarea', response.data)
+          response = await datatask.create(taskData)
+        }
+        if (response.status === 201) {
+          console.log('Tarea Guardada con éxito', response.data)
+          this.dialog = false
+          this.refreshTasks()
+        } else {
+          console.error('Error al Guardar la tarea', response.data)
         }
       } catch (error) {
-        console.error('Hubo un detalle al agregar la tarea', error)
+        console.error('Hubo un detalle al Guardar la tarea', error)
       }
     },
     async deleteTask (id) {
@@ -145,8 +154,27 @@ export default {
       } catch (error) {
         console.error('Error al recuperar las tareas', error)
       }
+    },
+    updateTask (task) {
+      this.dialog = true
+      this.task = task
+      this.title = task.title
+      this.description = task.description
+      this.due_date = task.due_date
+      this.comments = task.comments
+      this.is_completed = task.is_completed
+      this.tags = task.tags
+    },
+    newform () {
+      this.title = ''
+      this.description = ''
+      this.due_date = null
+      this.comments = ''
+      this.is_completed = null
+      this.tags = ''
     }
   },
+
   name: 'IndexPage'
 }
 </script>

@@ -20,6 +20,14 @@ class Datatask {
   delete (id) {
     return http.delete(`tasks/${id}`)
   }
+
+  update (id, data) {
+    const formData = new URLSearchParams()
+    Object.keys(data).forEach((key) => {
+      formData.append(key, data[key])
+    })
+    return http.put(`tasks/${id}`, formData)
+  }
 }
 
 export default new Datatask()
