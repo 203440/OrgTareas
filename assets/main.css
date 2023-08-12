@@ -1,0 +1,7 @@
+body, html, #app, .application--wrap {
+  background-color: #FFF !important;  /* Esto establece el fondo en blanco */
+}
+
+.general {
+  background-color: #FFF !important;
+}
