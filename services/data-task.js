@@ -26,7 +26,10 @@ class Datatask {
     Object.keys(data).forEach((key) => {
       formData.append(key, data[key])
     })
-    return http.put(`tasks/${id}`, formData)
+    return http.put(`tasks/${id}`, formData).then((response) => {
+      console.log('Respuesta del servidor al actualizar:', response)
+      return response
+    })
   }
 }
 

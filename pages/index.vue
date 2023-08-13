@@ -3,16 +3,36 @@
     <v-card>
       <v-card-title>¡Tasks!</v-card-title>
       <v-col class="d-flex justify-end">
-        <v-btn @click="dialog = true" rounded outlined color="blue">Agregar</v-btn>
+        <v-btn @click="dialog = true; newform()" rounded outlined color="blue">Agregar</v-btn>
       </v-col>
       <v-dialog v-model="dialog" max-width="500px">
         <v-card>
           <v-card-title>Nueva Tarea</v-card-title>
           <v-card-text>
             <v-form ref="form">
-              <v-text-field label="Titulo" v-model="title"></v-text-field>
+              <v-text-field label="Titulo" v-model="title" :rules="[requiredRule]" :error-messages="titleError"></v-text-field>
               <v-text-field label="Descripción" v-model="description"></v-text-field>
-              <v-text-field label="Fecha limite (YYYY-MM-DD)" v-model="due_date"></v-text-field>
+              <v-menu
+              ref="menu"
+              v-model="menu"
+              :close-on-content-click="false"
+              :nudge-right="40"
+              transition="scale-transition"
+              offset-y
+              min-width="290px">
+                <template v-slot:activator="{ on, attrs }">
+                  <v-text-field
+                  v-model="due_date"
+                  label="Fecha limite (YYYY-MM-DD)"
+                  readonly
+                  v-bind="attrs"
+                  v-on="on"
+                  :rules="[requiredRule]"
+                  :error-messages="dueDateError">
+                  </v-text-field>
+                </template>
+                <v-date-picker v-model="due_date" :min="minDate" @input="menu = false"></v-date-picker>
+              </v-menu>
               <v-text-field label="Comentarios" v-model="comments"></v-text-field>
               <v-radio-group v-model="is_completed" row>
                 <v-label>¿Tarea ya realizada?</v-label>
@@ -28,11 +48,21 @@
         </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog v-model="confirmDg" max-width="290">
+        <v-card>
+          <v-card-title class="headline">¿Estas seguro de eliminar esta tarea?</v-card-title>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="red darken-1" text @click="confirmDg = false">Cancelar</v-btn>
+            <v-btn color="green darken-1" text @click="confirmDelete">Si</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <v-container>
         <v-row>
-          <v-col class="blue lighten-2, column-spacing">
+          <v-col class="blue lighten-2, column-spacing" @dragover.prevent="allowDrop" @drop="dropToDo">
             <h1>To Do</h1>
-            <v-card v-for="task in tareastoDo" :key="task.id" class="white , task">
+            <v-card v-for="task in tareastoDo" :key="task.id" class="white , task" draggable="true" @dragstart="dragStart(task)">
               <v-card-title class="purple lighten-3">{{ task.title }}</v-card-title>
               <v-card-text class="black-text2">{{ task.due_date }}</v-card-text>
               <v-card-text class="black-text2">No completada</v-card-text>
@@ -42,15 +72,9 @@
               </v-card-actions>
             </v-card>
           </v-col>
-          <!-- <v-col class="orange lighten-2, column-spacing">
-            <h1>Doing</h1>
-            <v-card>
-              <v-card-title>Doing</v-card-title>
-            </v-card>
-          </v-col>-->
-          <v-col class="green lighten-2, column-spacing">
+          <v-col class="green lighten-2, column-spacing" @dragover.prevent="allowDrop" @drop="dropDone">
             <h1>Done</h1>
-            <v-card v-for="task in tareasDone" :key="task.id" class="white , task">
+            <v-card v-for="task in tareasDone" :key="task.id" class="white , task" draggable="=true" @dragstart="dragStart(task)">
               <v-card-title class="purple lighten-3">{{ task.title }}</v-card-title>
               <v-card-text class="black-text2">{{ task.due_date }}</v-card-text>
               <v-card-text class="black-text2">Completada</v-card-text>
@@ -81,7 +105,14 @@ export default {
       description: '',
       tags: '',
       tasks: [],
-      task: null
+      task: null,
+      confirmDg: false,
+      taskIdDelete: null,
+      requiredRule: [v => !!v || 'Este campo es obligatorio'],
+      titleError: '',
+      dueDateError: '',
+      draggedTask: null,
+      minDate: new Date().toISOString().substr(0, 10)
     }
   },
   async mounted () {
@@ -113,6 +144,18 @@ export default {
         comments: this.comments,
         tags: this.tags
       }
+      if (!this.title) {
+        this.titleError = 'El título es obligatorio'
+        return
+      } else {
+        this.titleError = ''
+      }
+      if (!this.due_date) {
+        this.dueDateError = 'La fecha límite es obligatoria'
+        return
+      } else {
+        this.dueDateError = ''
+      }
       console.log(taskData)
       try {
         let response
@@ -122,7 +165,8 @@ export default {
         } else {
           response = await datatask.create(taskData)
         }
-        if (response.status === 201) {
+        console.log('Respuesta del servidor: ', response)
+        if (response.status === 201 || response.status === 200) {
           console.log('Tarea Guardada con éxito', response.data)
           this.dialog = false
           this.refreshTasks()
@@ -133,9 +177,14 @@ export default {
         console.error('Hubo un detalle al Guardar la tarea', error)
       }
     },
-    async deleteTask (id) {
+    deleteTask (id) {
+      this.taskIdDelete = id
+      this.confirmDg = true
+    },
+    async confirmDelete () {
+      this.confirmDg = false
       try {
-        const response = await datatask.delete(id)
+        const response = await datatask.delete(this.taskIdDelete)
         if (response.status === 200) {
           console.log('Se elimino con exito la tarea')
           await this.refreshTasks()
@@ -166,12 +215,36 @@ export default {
       this.tags = task.tags
     },
     newform () {
+      this.task = null
       this.title = ''
       this.description = ''
       this.due_date = null
       this.comments = ''
       this.is_completed = null
       this.tags = ''
+    },
+    dragStart (task) {
+      this.draggedTask = task
+    },
+    allowDrop (event) {
+      event.preventDefault()
+    },
+    dropToDo () {
+      if (this.draggedTask) {
+        this.draggedTask.is_completed = 1
+        this.updateDragged()
+      }
+    },
+    dropDone () {
+      if (this.draggedTask) {
+        this.draggedTask.is_completed = 0
+        this.updateDragged()
+      }
+    },
+    async updateDragged () {
+      this.task = this.draggedTask
+      await this.submitForm()
+      this.draggedTask = null
     }
   },
 
