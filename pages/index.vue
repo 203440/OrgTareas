@@ -75,7 +75,7 @@
           <v-col class="green lighten-2, column-spacing" @dragover.prevent="allowDrop" @drop="dropDone">
             <h1>Done</h1>
             <v-card v-for="task in tareasDone" :key="task.id" class="white , task" draggable="=true" @dragstart="dragStart(task)">
-              <v-card-title class="purple lighten-3">{{ task.title }}</v-card-title>
+              <v-card-title class="orange lighten-1">{{ task.title }}</v-card-title>
               <v-card-text class="black-text2">{{ task.due_date }}</v-card-text>
               <v-card-text class="black-text2">Completada</v-card-text>
               <v-card-actions>

@@ -6,7 +6,7 @@ class Datatask {
   }
 
   get (id) {
-    return http.get(`tasks/${id}`)
+    return http.get(`/tasks/${id}`)
   }
 
   create (data) {
@@ -18,7 +18,7 @@ class Datatask {
   }
 
   delete (id) {
-    return http.delete(`tasks/${id}`)
+    return http.delete(`/tasks/${id}`)
   }
 
   update (id, data) {
